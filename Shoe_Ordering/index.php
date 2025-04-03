@@ -345,7 +345,7 @@
             <div class="logo">Shoe Ordering</div>
             <ul>
                 <li><a href="#home">Home</a></li>
-                <li><a href="#account">Account</a></li>
+                <li><a href="account.php">Account</a></li>
                 <li><a href="#about">About</a></li>
                 <li><a href="#explore">Explore</a></li>
             </ul>
