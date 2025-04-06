@@ -248,8 +248,8 @@
             <div class='right-selection'>
                 <div class='account-info' id='account-info'>Sign In/Register</div>
             </div>
-            <input class='searchbar'  placeholder='Search' type='text'>
-            <image src='magnifying-glass.png' style='transform:translateX(-150px);' width='12px' height='12px'>
+           <input class='searchbar' id='searchbar' placeholder='Search' type='text'>
+<img src='magnifying-glass.png' style='position: absolute; right: 30px; top: 25px;' width='12px' height='12px'>
             <div class='cart-icon disabled' id='cart-icon'>🛒</div>
             </header>
             <div class='dd'></div>
@@ -257,63 +257,82 @@
 
             <section class='products'>";
 
-            require("./db.php");
+require("./db.php");
 
-            $query = "";
-            
-            if(isset($_GET["filter"])){
-                if($_GET["filter"] == "All"){
-                    $query = "select * from Product";
-                }else{
-                    $query = "select * from Product WHERE Brand = '" . $_GET["filter"] . "'";
-                }
-            }else{
-                $query = "select * from Product";
-            }
 
-           // Get category from URL, default to null if not set
-    $category = isset($_GET['category']) ? $_GET['category'] : null;
+$brand = isset($_GET["filter"]) ? $_GET["filter"] : null;
+$category = isset($_GET["category"]) ? $_GET["category"] : null;
 
-    // Base query
-    $query = "SELECT * FROM Product";
+$query = "SELECT * FROM Product";
 
-    // Filter by category if specified
-    if ($category) {
-        $query .= " WHERE Category = '" . mysqli_real_escape_string($conn, $category) . "'";
-    }
 
-    if ($exec = mysqli_query($conn, $query)) {
-        if (mysqli_num_rows($exec) > 0) {
-            while ($rows = mysqli_fetch_assoc($exec)) {
-                $Name = $rows["Name"];
-                $Image = $rows["ImageURL"];
-                echo "<div class='product-card'>
-                    <img src='" . $Image . "' alt='Product'>
-                    <div class='product-title'>" . $Name . "</div>
-                </div>";
-            }
-        } else {
-            echo "<p>No products found in this category.</p>";
+$whereClauses = array();
+
+if ($brand && $brand !== "All") {
+    $whereClauses[] = "Brand = '" . mysqli_real_escape_string($conn, $brand) . "'";
+}
+
+if ($category) {
+    $whereClauses[] = "Category = '" . mysqli_real_escape_string($conn, $category) . "'";
+}
+
+if (!empty($whereClauses)) {
+    $query .= " WHERE " . implode(" AND ", $whereClauses);
+}
+
+if ($exec = mysqli_query($conn, $query)) {
+    if (mysqli_num_rows($exec) > 0) {
+        while ($rows = mysqli_fetch_assoc($exec)) {
+            $Name = $rows["Name"];
+            $Image = $rows["ImageURL"];
+            echo "<div class='product-card'>
+                <img src='" . $Image . "' alt='Product'>
+                <div class='product-title'>" . $Name . "</div>
+            </div>";
         }
     } else {
-        echo "Error: " . mysqli_error($conn);
+        echo "<p>No products found matching the selected criteria.</p>";
     }
+} else {
+    echo "Error: " . mysqli_error($conn);
+}
 
-    mysqli_close($conn); // Close the database connection
+mysqli_close($conn); 
+echo "</section>";
     }
 ?>
     <script>
-        const isLoggedIn = true;
-        const username = "";
+    const isLoggedIn = true;
+    const username = "";
+    const accountInfo = document.getElementById("account-info");
+    const cartIcon = document.getElementById("cart-icon");
+    const searchBar = document.getElementById("searchbar");
 
-        const accountInfo = document.getElementById("account-info");
-        const cartIcon = document.getElementById("cart-icon");
+    if (isLoggedIn) {
+        accountInfo.textContent = username;
+        cartIcon.classList.remove("disabled");
+    }
 
-        if (isLoggedIn) {
-            accountInfo.textContent = username;
-            cartIcon.classList.remove("disabled"); 
-        }
-    </script>
+    
+    searchBar.addEventListener('input', function() {
+        const searchTerm = this.value.trim();
+
+    
+        fetch('search.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'search=' + encodeURIComponent(searchTerm)
+        })
+        .then(response => response.text())
+        .then(data => {
+            
+            document.querySelector('.products').innerHTML = data;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
 
 </body>
 </html>
